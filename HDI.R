@@ -1,0 +1,67 @@
+setwd("~/Desktop/Rstudio git/Human_development_index")
+
+library(rvest)
+library(ggplot2)
+library(ggmap)
+library(dplyr)
+library(RColorBrewer)
+library(magrittr)
+
+url <- "https://en.wikipedia.org/wiki/Human_Development_Index"
+
+#getting the page
+webpage <- read_html(url)
+
+#getting list of table from html nodes
+tbls <- html_nodes(webpage, "table")
+tbls
+
+#getting the table
+
+HDI <- webpage %>%
+  html_nodes(xpath = '//*[@id="mw-content-text"]/div/    table[1]') %>%
+  .[1] %>%
+  html_table(fill = TRUE)
+
+HDI <- as.data.frame(HDI)
+
+#remove first row
+HDI <- HDI[-1,]
+
+#Select the need variable
+HDI <- HDI[,c(1,3,4)]
+head(HDI)
+
+#checking the NA value
+sum(is.na(HDI))
+
+#getting world map
+world_map <- map_data("world")
+
+#see the difference of code between two object
+setdiff(HDI$Country, world_map$region)
+
+HDI$Country <- recode(HDI$Country,
+                      'United Kingdom'= 'UK',
+                      'United States' = 'USA'
+)
+
+map.world <- left_join(world_map, HDI, by = c('region' = 'Country'))
+
+
+a = ggplot() +
+  geom_polygon(data = map.world, aes(x = long, y = lat, group = group, fill = map.world$Score)) +
+  labs(title = "Human Development Index, by country"
+       ,subtitle = "source: https://en.wikipedia.org/wiki/Human_Development_Index") +
+  theme(panel.background = element_rect(fill = "#3E3E3E")
+        a,plot.background = element_rect(fill = "#3E3E3E")
+        ,legend.background = element_blank()
+        ,axis.title = element_blank()
+        ,axis.text = element_blank()
+        ,axis.ticks = element_blank()
+        ,panel.grid = element_blank()
+        ,text = element_text(family = "Gill Sans", color = "#DDDDDD")
+        ,plot.title = element_text(size = 32)
+        ,legend.position = 'none'
+  ) 
+a
